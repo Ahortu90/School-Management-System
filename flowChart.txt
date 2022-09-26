@@ -1,0 +1,127 @@
+!#/bash/python3
+
+#Starting server XAMPP(runing on localhost, with DataBase: school_db, password: None;)
+
+This application uses a GUI interface: Language Python(PySide6).
+
+#Geting Imputs from user:
+	QLineEdit: help gets yser inputs;
+	QPushButton: help communicate with the database;
+
+#Inputs:
+	if inputs does not exits in database:
+		input +1;
+		QMessageBox.information(self, "Feedback", "Data added successfull")
+	elfi update :
+		New_input - old_input;
+		input += 1;
+		QMessageBox.information(self, "FeedBack", "Data updated successfull")
+	else:
+		send back a message using QMessageBox.warning(self, "warning", "Data already exits")
+
+# Making query from database:
+	query used to communicate with database server:
+		- INSERT: to save data to the database,
+		_ UPDATEL to change a saved data in the database,
+		_ DELETE: to remove a saved data in the database,
+		_ SUM: To total saved data
+		_ SELECT: 
+
+	if insert in query:
+		inputs = QLineEdit
+		if inputs != '':
+			"INSERT INTO example(a,s,d,f) VALUE(%s,%s,%s,%s)".foramt(inputs)
+			database +1
+		else:
+		    QMessageBox.information(self, "warning", "inputs can not be empty")
+	
+	elfi update in query:
+		if inputs != '':
+                        "UPDATE example WHERE a ={}".foramt(inputs)
+                        database +-1
+                else:
+                    QMessageBox.information(self, "warning", "inputs can not be empty")
+
+	elfi delete in query:
+		if inputs != '':
+                        "DELETE example WHERE a ={}".foramt(inputs)
+                        database -1
+                else:
+                    QMessageBox.information(self, "warning", "inputs can not be empty")
+
+	elfi select in query:
+		if inputs != '':
+                        "SELECT * FROM example WHERE a ={}".foramt(inputs)
+                        database display all saved data base on the inputs
+                else:
+                    QMessageBox.information(self, "warning", "inputs can not be empty")
+
+	elfi sun in query:
+		if inputs != '':
+                        "SUM * example WHERE a ={}".foramt(inputs)
+                        database ++
+                else:
+                    QMessageBox.information(self, "warning", "inputs can not be empty")
+	
+	else:
+	    Dont nothing
+		
+# Displaying informations:
+	
+	Save data are displyed into a widgets(QTableWigets)
+	
+``````````````
+splash screen
+welcome page
+login || signUp page
+Teachers/Admin & Student selection
+School educational system selection
+
+`````````````
+
+# Welcome page:
+	if QPushButton == Clicked:
+		set page to login page
+	else:
+	    Do nothing
+
+#login || signUp page:
+	if QPushButton.login == Clicked:
+		set page to School educational system selection:
+
+	elfi QPushButton.create account:
+		set page to signUp;
+		
+		if inputs = QLineEdit:
+			cursor.execute("INSERT INTO example(a,b,c,d) VALUES(%s,%s,%s,%S)".format(inputs)
+			set page to login
+		
+		elfi QPushButton.already have an account = clicked:
+			set page to login
+		
+		else:
+			QMessageBox.warning(self, "signUp", "Please fill all inputs")
+#School educational system selection:
+	````````````
+	GES
+	MONTESSORI
+	CAMBRIDGE
+
+	````````````
+	if GES selected set page to Teachers/Admin & Student selection
+	if MONTESSORI selected set page to Teachers/Admin & Student selection
+	if CAMBRIDGE selected set page to Teachers/Admin & Student selection
+
+# Teachers/Admin & Student selection:
+	if QPhusButton.Teacher/admin = clicked:
+		set page to admin dashboard
+	
+	elfi QPushButton.Student = clicked:
+		set page to student lib.
+
+# Admin Dashboard:
+	this is where all adminnistrative works are done
+
+# Student lib:
+	this is a research platform for students
+	it uses an AI model to communicate with the student;
