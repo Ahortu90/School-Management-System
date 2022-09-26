@@ -1,11 +1,22 @@
-[you can download the serve from here:](https://downloadsapachefriends.global.ssl.fastly.net/8.1.6/xampp-windows-x64-8.1.6-0-VS16-installer.exe?from_af=true)
+# Python(pySide6): Desktop Application
+<hr>
+[You can download the serve from here:](https://downloadsapachefriends.global.ssl.fastly.net/8.1.6/xampp-windows-x64-8.1.6-0-VS16-installer.exe?from_af=true)
 
-```````
+
+[You can read more about pySide6 and QT here:](https://doc.qt.io/qtforpython/contents.html)
+
+installing pySide6
+```
+pip install PySide6
+
+```
+
+```
 After installing the serve:
 run it and import school_db.sql into the serve
 
-``````
+```
 
-## About This Application:book:
-**This is a desktop student management system apllication
-``With an AI model``
+## Introduction :page_with_curl:
+* **This is a desktop student management system apllication
+`With an AI model`
