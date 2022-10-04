@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QCommandLinkButton, QDat
     QTableWidget, QTableWidgetItem, QTextEdit, QVBoxLayout,
     QWidget, QMessageBox)
 
+from PySide6 import QtGui, QtCore, QtPrintSupport, QtWidgets
+
 from ui_SMS import *
 import mysql.connector
 
@@ -22,6 +24,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setupUi(self)
+
+        for row in range(self.tableWidget_5.rowCount()):
+            for col in range(self.tableWidget_5.columnCount()):
+                item = QtWidgets.QTableWidgetItem('(%d, %d)' % (row, col))
+                item.setTextAlignment(QtCore.Qt.AlignCenter)
+                self.tableWidget_5.setItem(row, col, item)
 
         # Setting up tabs
         self.tabWidget.tabBar().setVisible(False)
@@ -74,6 +82,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.bt_32.clicked.connect(self.updateSchoolFees)
         self.bt_33.clicked.connect(self.deleteSchoolFees)
         self.pushButton.clicked.connect(self.resetButton)
+        self.bt_115.clicked.connect(self.searchSchool_fees)
+        self.bt_34.clicked.connect(self.addFeeding_Fees)
+        self.bt_35.clicked.connect(self.updateFees)
+        self.bt_36.clicked.connect(self.deleteFees)
+        self.bt_118.clicked.connect(self.searchFees)
+        self.bt_9.clicked.connect(self.reportsTab)
+        self.bt_26.clicked.connect(self.crache_inputTab)
+        self.bt_27.clicked.connect(self.primary_inputTab)
+        self.bt_28.clicked.connect(self.jhs_inputTab)
+        self.pushButton_9.clicked.connect(self.crache_printTab)
+        #self.bt_114.clicked.connect(self.handlePrint)
 
     def welcome(self):
         self.tabWidget.setCurrentIndex(0)
@@ -253,7 +272,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #except Exception as DatabaseError:
            # QMessageBox.warning(self, "Error", "Crendentail already exist")
 
-    # Getting Data from the DATABASE
+    # Getting Registed Student Data from the DATABASE
 
     def display1(self):
         self.tableWidget.setRowCount(0)
@@ -297,11 +316,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         search_by_name = self.lineEdit_13.text()
         if search_by_name != '':  
-            qry = ("SELECT registration_number FROM students WHERE full_name = '{}'").format(search_by_name)
+            qry = ("SELECT (registration_number) FROM students WHERE full_name = '{}'").format(search_by_name)
             cur.execute(qry)
-            data = cur.fetchone()
+            data = cur.fetchall()[0][0]
 
-            #self.lineEdit_7.setDisabled(True)
+            self.lineEdit_7.setDisabled(True)
             self.lineEdit_7.setText(str(data))
          
     def displaySearch(self):
@@ -718,7 +737,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cur = mydb.cursor()
 
         full_name = self.lineEdit_18.text()
-        if date != '':
+        if full_name != '':
             qry = "DELETE FROM attendance WHERE fullname ='{}'".format(full_name)
             cur.execute(qry)
             mydb.commit()
@@ -762,7 +781,56 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.warning(self, "", "Please fill all inputs")
 
     def updateSchoolFees(self):
-        QMessageBox.information(self, "Update Button", "Please you cann't use the update button\nPlease delete the details to add \n new one")
+        full_name = self.lineEdit_33.text()
+        Class = self.comboBox_16.currentText()
+        term = self.comboBox_17.currentText()
+        amount_paid = self.lineEdit_32.text()
+        paid_by = self.lineEdit_31.text()
+        date = self.lineEdit_56.text()
+
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+        if full_name != '{}':
+            qry = """UPDATE school_fees SET Class = '{}', term = '{}', amount_paid = '{}',
+             paid_by = '{}', date = '{}' WHERE full_name = '{}'""".format(Class, term, amount_paid, paid_by, date, full_name)
+            cur.execute(qry)
+            mydb.commit()
+            cur.close()
+            QMessageBox.information(self, " ", "Updated Successfully")
+            self.displaySchoolFees1()
+        else:
+            QMessageBox.warning(self, "Error", "Please fill the right details to updated")
+
+    def searchSchool_fees(self):
+        Class = self.comboBox_16.currentText()
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+        if Class != '{}':
+            qry = "SELECT * FROM school_fees WHERE Class ='{}'".format(Class)
+            cur.execute(qry)
+            data = cur.fetchall()
+
+            for row , form in enumerate(data):
+                for col , item in enumerate(form):
+                    self.tableWidget_5.setItem(row, col, QTableWidgetItem(str(item)))
+                    col +=1
+
+                    row_position = self.tableWidget_5.rowCount()
+                    self.tableWidget_5.insertRow(row_position)
+            QMessageBox.information(self, "","Data fetch successfully")
+        else:
+            QMessageBox.warning(self, "Error", "Please select a class to search")
+
 
     def deleteSchoolFees(self):
         full_name = self.lineEdit_33.text()
@@ -818,6 +886,540 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lineEdit_31.clear()
         self.lineEdit_56.clear()
 
+#Feeding Fess & Studies Fees
+    def addFeeding_Fees(self):
+        is_studies = "Studies Fees"
+        is_feeding = "Feeding Fees"
+
+        ans = self.comboBox_31.currentText()
+        full_name = self.lineEdit_34.text()
+        Class = self.comboBox_18.currentText()
+        amount_paid = self.lineEdit_35.text()
+        date = self.lineEdit_57.text()
+
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+
+        if ans == is_feeding and full_name != '{}' and amount_paid != '{}':
+            qry = """INSERT INTO feeding_fees (full_name, Class, type_of_fees, amount_paid, date)
+                VALUES(%s,%s,%s,%s,%s)""".format(full_name, Class, ans, amount_paid, date)
+            value = (full_name, Class, ans, amount_paid, date)
+            cur.execute(qry, value)
+            mydb.commit()
+            QMessageBox.information(self, " ", "Feeding Fees Added Successfully")
+            #self.displayFees1()
+
+        elif ans == is_studies and full_name != '{}' and amount_paid != '{}':
+            qry = """INSERT INTO studies_fees (full_name, Class, type_of_fees, amount_paid, date)
+                VALUES(%s,%s,%s,%s,%s)""".format(full_name, Class, ans, amount_paid, date)
+            value = (full_name, Class, ans, amount_paid, date)
+            cur.execute(qry, value)
+            mydb.commit()
+            QMessageBox.information(self, " ", "Studies Fees Added Successfully")
+           #self.displayFees2()
+        else:
+            QMessageBox.warning(self, "Error", "Please fill all flied to add up!")
+
+    def displayFees1(self):
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+        qry = "SELECT * FROM feeding_fees"
+        cur.execute(qry)
+        data = cur.fetchall()
+
+        for row , form in enumerate(data):
+            for col , item in enumerate(form):
+                self.tableWidget_6.setItem(row, col, QTableWidgetItem(str(item)))
+                col +=1
+
+                row_position = self.tableWidget_6.rowCount()
+                self.tableWidget_6.insertRow(row_position)
+        QMessageBox.information(self, "","Data fetch successfully")
+
+    def displayFees2(self):
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+        qry = "SELECT * FROM studies_fees"
+        cur.execute(qry)
+        data = cur.fetchall()
+
+        for row , form in enumerate(data):
+            for col , item in enumerate(form):
+                self.tableWidget_6.setItem(row, col, QTableWidgetItem(str(item)))
+                col +=1
+
+                row_position = self.tableWidget_6.rowCount()
+                self.tableWidget_6.insertRow(row_position)
+        QMessageBox.information(self, "","Data fetch successfully")
+
+    def updateFees(self):
+        is_studies = "Studies Fees"
+        is_feeding = "Feeding Fees"
+
+        ans = self.comboBox_31.currentText()
+        full_name = self.lineEdit_34.text()
+        Class = self.comboBox_18.currentText()
+        amount_paid = self.lineEdit_35.text()
+        date = self.lineEdit_57.text()
+
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+
+        if ans == is_feeding and full_name != '{}' and amount_paid != '{}':
+
+            qry = """UPDATE feeding_fees SET Class = '{}',type_of_fees = '{}', amount_paid = '{}',  date = '{}',
+              WHERE full_name = '{}'""".format(Class, ans, amount_paid, date, full_name)
+            cur.execute(qry)
+            mydb.commit()
+            cur.close()
+            QMessageBox.information(self, " ", "Updated Successfully")
+            self.displayFees1()
+
+        elif ans == is_studies and full_name != '{}' and amount_paid != '{}':
+
+            qry = """UPDATE studies_fees SET Class = '{}',type_of_fees = '{}', amount_paid = '{}',  date = '{}',
+              WHERE full_name = '{}'""".format(Class, ans, amount_paid, date, full_name)
+            cur.execute(qry)
+            mydb.commit()
+            cur.close()
+            QMessageBox.information(self, " ", "Updated Successfully")
+            self.displayFees2()
+        else:
+            QMessageBox.warning(self, "Error", "Please fill the right details to updated")
+
+    def searchFees(self):
+        is_studies = "Studies Fees"
+        is_feeding = "Feeding Fees"
+
+        ans = self.comboBox_31.currentText()
+        full_name = self.lineEdit_34.text()
+        Class = self.comboBox_18.currentText()
+        amount_paid = self.lineEdit_35.text()
+        date = self.lineEdit_57.text()
+
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+        if ans == is_feeding and full_name != '{}':
+            QMessageBox.information(self, "Searching", "Search student Feeding Fees by Name")
+            qry = "SELECT  FROM feeding_fees WHERE full_name ='{}'AND Class ='{}' AND date = '{}'".format(full_name, Class, date)
+            cur.execute(qry)
+            data = cur.fetchall()
+
+            for row , form in enumerate(data):
+                for col , item in enumerate(form):
+                    self.tableWidget_6.setItem(row, col, QTableWidgetItem(str(item)))
+                    col +=1
+
+                    row_position = self.tableWidget_6.rowCount()
+                    self.tableWidget_6.insertRow(row_position)
+            QMessageBox.information(self, "","Data fetch successfully")
+
+        elif ans == is_studies and full_name != '{}':
+            QMessageBox.information(self, "Searching", "Search student Studies Fees by Name")
+            qry = "SELECT * FROM studies_fees WHERE full_name ='{}'AND Class ='{}' AND date = '{}'".format(full_name, Class, date)
+            cur.execute(qry)
+            data = cur.fetchall()
+
+            for row , form in enumerate(data):
+                for col , item in enumerate(form):
+                    self.tableWidget_6.setItem(row, col, QTableWidgetItem(str(item)))
+                    col +=1
+
+                    row_position = self.tableWidget_6.rowCount()
+                    self.tableWidget_6.insertRow(row_position)
+            QMessageBox.information(self, "","Data fetch successfully")
+
+        else:
+            QMessageBox.warning(self, "Error", "Please select a class to search")
+
+
+    def deleteFees(self):
+        is_studies = "Studies Fees"
+        is_feeding = "Feeding Fees"
+
+        ans = self.comboBox_31.currentText()
+        full_name = self.lineEdit_34.text()
+        Class = self.comboBox_18.currentText()
+
+        mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+        )
+        cur = mydb.cursor()
+
+        delete_message = QMessageBox.warning(self ,"COMFIRMATION" , "Do you want to Delete ?",QMessageBox.Yes | QMessageBox.No )
+        QMessageBox.information(self, "Deleting", "Please select the Student's name and Class to delete")
+        if ans == is_feeding and full_name != '':
+            if delete_message == QMessageBox.Yes :
+                qry = "DELETE * FROM feeding_fees WHERE full_name  = '{}' AND Class = '{}'".format(full_name, Class)
+                cur.execute(qry)
+                mydb.commit()
+                cur.close()
+                QMessageBox.information(self, " ", "Deleted successfully")
+                self.displayFees1()
+
+        elif ans == is_studies and full_name != '':
+            if delete_message == QMessageBox.Yes :
+                qry = "DELETE * FROM studies_fees WHERE full_name  = '{}' AND Class = '{}'".format(full_name, Class)
+                cur.execute(qry)
+                mydb.commit()
+                cur.close()
+                QMessageBox.information(self, " ", "Deleted successfully")
+                self.displayFees2()
+        else:
+            QMessageBox.warning(self, " ", "Student's School Fees\n not found in DATABASE")
+#self.tableWidget_5
+# Printing Table
+
+#  Student Reports Butoon Handling
+    def reportsTab(self):
+        self.tabWidget_4.setCurrentIndex(4)
+        self.tabWidget_5.setCurrentIndex(0)
+    def crache_inputTab(self):
+        self.tabWidget_5.setCurrentIndex(0)
+    def primary_inputTab(self):
+        self.tabWidget_5.setCurrentIndex(1)
+    def jhs_inputTab(self):
+        self.tabWidget_5.setCurrentIndex(2)
+    
+    def crache_printTab(self):
+        self.tabWidget_5.setCurrentIndex(3)
+        
+    
+    #
+    def primary_printTab(self):
+        self.tabWidget_5.setCurrentIndex(4)
+
+        ##Seting Up
+        school_name = self.lineEdit_125.text()
+        school_address = self.lineEdit_126.text()
+        phone_number = self.lineEdit_127.text()
+        school_term = self.comboBox_65.currentText()
+        student_name = self.lineEdit_124.text()
+        student_class = self.comboBox_12.currentText()
+        promoted_to = self.comboBox_13.currentText()
+        total_attendance = self.lineEdit_156.text()
+        term_begins = self.lineEdit_168.text()
+        term_end = self.lineEdit_167.text()
+        school_date = self.lineEdit_184.text()
+
+        if school_name != '{}' and school_address != '{}' and phone_number != '{}' and school_term != '{}':
+            self.label_605.setText(school_name)
+            self.label_606.setText(phone_number)
+            self.label_607.setText(school_address)
+            
+            mydb = mysql.connector.connect(
+            host = "localhost",
+            user = "root",
+            passwd = "",
+            db = "school_db"
+            )
+            cur = mydb.cursor()
+            qry = "SELECT (registration_number) FROM students WHERE full_name = '{}'".format(student_name)
+            cur.execute(qry)
+            data = cur.fetchall()[0][0]
+
+            self.label_610.setText(str(data))
+            self.label_612.setText(student_name)
+            self.label_618.setText(school_date)
+            self.label_620.setText(student_class)
+            self.label_616.setText(term_begins)
+            self.label_614.setText(term_end)
+            self.label_638.setText(total_attendance)
+
+# Making qurey for subjects --------- Exams And Class Work-----------------------
+    # English Language (Exams & Class Work)
+            english = "English Language"
+            marksType = "Exams"
+            marksType1 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, english, marksType)
+            cur.execute(qry)
+            data1 = cur.fetchall()[0][0]
+            if data1 == None:
+                 self.label_759.setText("")
+            else:
+                ans = float(data1)
+                result = ans / 2
+                self.label_759.setText(str(result))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, english, marksType1)
+            cur.execute(qry)
+            data2 = cur.fetchall()[0][0]
+            if data2 == None:
+                self.label_758.setText("")
+            else:
+                ans1 = float(data2)
+                result2 = ans1 / 2
+                self.label_758.setText(str(result2))
+
+    # ghanaian Language (Exams & Class Work)
+            ghana_lang = "Ghanaian Language"
+            marksType2 = "Exams"
+            marksType3 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, ghana_lang, marksType2)
+            cur.execute(qry)
+            data3 = cur.fetchall()[0][0]
+            if data3 == None:
+                 self.label_766.setText("")
+            else:
+                ans2 = float(data3)
+                result3 = ans2 / 2
+                self.label_766.setText(str(result3))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, ghana_lang, marksType3)
+            cur.execute(qry)
+            data4 = cur.fetchall()[0][0]
+            if data4 == None:
+                self.label_765.setText("")
+            else:
+                ans3 = float(data4)
+                result4 = ans3 / 2
+                self.label_765.setText(str(result4))
+
+    # Maths (Exams & Class Work)
+            Maths = "Mathematics"
+            marksType4 = "Exams"
+            marksType5 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, ghana_lang, marksType4)
+            cur.execute(qry)
+            data5 = cur.fetchall()[0][0]
+            if data5 == None:
+                self.label_769.setText("")
+            else:
+                ans4 = float(data5)
+                result5 = ans4 / 2
+                self.label_769.setText(str(result5))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, ghana_lang, marksType5)
+            cur.execute(qry)
+            data6 = cur.fetchall()[0][0]
+            if data6 == None:
+                self.label_768.setText("")
+            else:
+                ans5 = float(data6)
+                result6 = ans5 / 2
+                self.label_768.setText(str(result6))
+
+    # Intergrated Science (Exams & Class Work)
+            Science = "Intergrated Science"
+            marksType4 = "Exams"
+            marksType5 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, Science, marksType4)
+            cur.execute(qry)
+            data7 = cur.fetchall()[0][0]
+            if data7 == None:
+                self.label_777.setText("")
+            else:
+                ans6 = float(data7)
+                result7 = ans6 / 2
+                self.label_777.setText(str(result7))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, Science, marksType5)
+            cur.execute(qry)
+            data8 = cur.fetchall()[0][0]
+            if data8 == None:
+                self.label_776.setText("")
+            else:
+                ans7 = float(data8)
+                result8 = ans7 / 2
+                self.label_776.setText(str(result8))
+
+    # Religious and Moral Education (Exams & Class Work)
+            r_m_e = "Religious and Moral Education"
+            marksType6 = "Exams"
+            marksType7 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, r_m_e, marksType6)
+            cur.execute(qry)
+            data9 = cur.fetchall()[0][0]
+            if data9 == None:
+                self.label_782.setText("")
+            else:
+                ans8 = float(data9)
+                result9 = ans8 / 2
+                self.label_782.setText(str(result9))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, r_m_e, marksType7)
+            cur.execute(qry)
+            data10 = cur.fetchall()[0][0]
+            if data10 == None:
+                self.label_781.setText("")
+            else:
+                ans9 = float(data10)
+                result10 = ans9 / 2
+                self.label_781.setText(str(result10))
+
+    # History (Exams & Class Work)
+            History = "History"
+            marksType8 = "Exams"
+            marksType9 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, History, marksType8)
+            cur.execute(qry)
+            data11 = cur.fetchall()[0][0]
+            if data11 == None:
+                self.label_787.setText
+            else:
+                ans10 = float(data11)
+                result11 = ans10 / 2
+                self.label_787.setText(str(result11))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, History, marksType9)
+            cur.execute(qry)
+            data12 = cur.fetchall()[0][0]
+            if data12 == None:
+                self.label_786.setText("")
+            else:
+                ans11 = float(data12)
+                result12 = ans11 / 2
+                self.label_786.setText(str(result12))
+
+    # Computing (Exams & Class Work)
+            Computing = "Computing"
+            marksType10 = "Exams"
+            marksType11 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, Computing, marksType10)
+            cur.execute(qry)
+            data13 = cur.fetchall()[0][0]
+            if data13 == None:
+                self.label_792.setText("")
+            else:
+                ans12 = float(data13)
+                result13 = ans12 / 2
+                self.label_792.setText(str(result13))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, Computing, marksType11)
+            cur.execute(qry)
+            data14 = cur.fetchall()[0][0]
+            if data14 == None:
+                 self.label_791.setText("")
+            else:
+                ans13 = float(data14)
+                result14 = ans13 / 2
+                self.label_791.setText(str(result14))
+
+    # Creative Arts (Exams & Class Work)
+            Creative_Arts = "Creative Arts"
+            marksType12 = "Exams"
+            marksType13 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, Creative_Arts, marksType12)
+            cur.execute(qry)
+            data15 = cur.fetchall()[0][0]
+            if data15 == None:
+                self.label_797.setText("")
+            else:
+                ans14 = float(data15)
+                result15 = ans14 / 2
+                self.label_797.setText(str(result15))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, Creative_Arts, marksType13)
+            cur.execute(qry)
+            data16 = cur.fetchall()[0][0]
+            if data16 == None:
+                self.label_796.setText("")
+            else:
+                ans15 = float(data16)
+                result16 = ans15 / 2
+                self.label_796.setText(str(result16))
+
+    # OWOP(Exams & Class Work)
+            OWOP= "Our World Our People"
+            marksType14 = "Exams"
+            marksType15 = "Class Work"
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, OWOP, marksType14)
+            cur.execute(qry)
+            data17 = cur.fetchall()[0][0]
+            if data17 == None:
+                self.label_802.setText("")
+            else:
+                ans16 = float(data17)
+                result17 = ans16 / 2
+                self.label_802.setText(str(result17))
+
+
+            qry = """SELECT (marks) FROM mark WHERE full_name = '{}' AND Class = '{}' AND term = '{}'
+             AND subjects = '{}' AND mark_type = '{}'""".format(student_name, student_class, school_term, OWOP, marksType15)
+            cur.execute(qry)
+            data18 = cur.fetchall()[0][0]
+            if data18 == None:
+                self.label_801.setText("")
+            else:
+                ans17 = float(data18)
+                result18 = ans17 / 2
+                self.label_801.setText(str(result18))
+
+    # Calculating Sum Total of Exams & Class Work ---------------(Exams + Class Work)
+        
+            sumTotal = result + result2
+            self.label_760.setText(str(sumTotal))
+
+            sumTotal2 = result3 + result4
+            self.label_764.setText(str(sumTotal2))
+
+            sumTotal3 = result5 + result6
+            self.label_771.setText(str(sumTotal3))
+
+    def jhs_printTab(self):
+        self.tabWidget_5.setCurrentIndex(5)
 
 if __name__=="__main__":
     app = QApplication(sys.argv)

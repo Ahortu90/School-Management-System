@@ -22,7 +22,7 @@ This application uses a GUI interface: Language Python(PySide6).
 # Making query from database:
 	query used to communicate with database server:
 		- INSERT: to save data to the database,
-		_ UPDATEL to change a saved data in the database,
+		_ UPDATE to change a saved data in the database,
 		_ DELETE: to remove a saved data in the database,
 		_ SUM: To total saved data
 		_ SELECT: 
